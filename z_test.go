@@ -24,7 +24,7 @@ func TestDefaultHappyPath(t *testing.T) {
 	next := mockMiddlewares{}
 	m := NewDefaultMiddlewares(next, next, codec, "foo")
 
-	memo := "bar"
+	memo := "the quick brown fox jumps over the lazy dog"
 
 	f := new(transfertypes.FungibleTokenPacketData)
 	f.Memo = memo
