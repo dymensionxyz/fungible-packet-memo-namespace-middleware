@@ -46,7 +46,7 @@ func NewDefaultMiddlewares(
 	)
 }
 
-type Transformer func(string) string
+type Transformer func(string) (string, error)
 
 // Wrapper will take any fungible packet
 // and namespace the memo according to the transformer
@@ -82,7 +82,11 @@ func (w *Wrapper) SendPacket(
 	if err = w.codec.UnmarshalJSON(data, f); err != nil {
 		return 0, errorsmod.Wrap(errors.Join(sdkerrors.ErrJSONUnmarshal, err), "packet data to fungible token data")
 	}
-	f.Memo = w.wrap(f.GetMemo())
+	f.Memo, err = w.wrap(f.GetMemo())
+	if err != nil {
+		err = errorsmod.Wrap(err, "unwrap")
+		return 0, err
+	}
 	data, err = w.codec.MarshalJSON(f)
 	if err != nil {
 		return 0, errorsmod.Wrap(errors.Join(sdkerrors.ErrJSONMarshal, err), "fungible token data to packet data")
@@ -120,7 +124,12 @@ func (w Unwrapper) OnRecvPacket(
 		err = errorsmod.Wrap(errors.Join(sdkerrors.ErrJSONUnmarshal, err), "packet data to fungible token data")
 		return channeltypes.NewErrorAcknowledgement(err)
 	}
-	f.Memo = w.unwrap(f.GetMemo())
+	var err error
+	f.Memo, err = w.unwrap(f.GetMemo())
+	if err != nil {
+		err = errorsmod.Wrap(err, "unwrap")
+		return channeltypes.NewErrorAcknowledgement(err)
+	}
 	bz, err := w.codec.MarshalJSON(f)
 	if err != nil {
 		err = errorsmod.Wrap(errors.Join(sdkerrors.ErrJSONMarshal, err), "fungible token data to packet data")
