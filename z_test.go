@@ -19,23 +19,24 @@ import (
 )
 
 func TestDefaultHappyPath(t *testing.T) {
-	codec := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
+	cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
 
 	next := mockMiddlewares{}
-	m := NewDefaultMiddlewares(next, next, codec, "foo")
+	m := NewDefaultMiddlewares(next, next, cdc, "foo")
 
 	memo := "the quick brown fox jumps over the lazy dog"
 
 	f := new(transfertypes.FungibleTokenPacketData)
 	f.Memo = memo
 
-	bz, _ := codec.MarshalJSON(f)
+	bz, _ := cdc.MarshalJSON(f)
 
-	m.Wrapper.SendPacket(sdk.Context{}, nil, "", "", clienttypes.Height{}, 0, bz)
+	// TODO: should really check that it's actually namespaced
+	_, _ = m.Wrapper.SendPacket(sdk.Context{}, nil, "", "", clienttypes.Height{}, 0, bz)
 	m.Unwrapper.OnRecvPacket(sdk.Context{}, channeltypes.Packet{Data: next.sent}, nil)
 	got := next.received.GetData()
 
-	_ = codec.UnmarshalJSON(got, f)
+	_ = cdc.UnmarshalJSON(got, f)
 	require.Equal(t, memo, f.GetMemo())
 }
 
